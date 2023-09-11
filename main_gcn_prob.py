@@ -120,8 +120,6 @@ def main(args):
                        nodes_group=dataset.skeleton().joints_group() if args.non_local else None).to(device)
     model_uncertainty = UncertaintyNetwork(128, linear_size=1024, num_joints=num_joints, device=device).to(device)
     print("==> Total parameters: {:.2f}M".format(sum(p.numel() for p in model_pos.parameters()) / 1000000.0))
-
-    # criterion = nn.MSELoss(reduction='mean').to(device)
     criterion = nn.L1Loss(reduction='mean').to(device)
     optimizer = torch.optim.Adam( 
             [
@@ -205,13 +203,9 @@ def main(args):
             "error_eval_p1": error_eval_p1,
             "error_eval_p2": error_eval_p2,
             "loss_uncertainty": epoch_loss_uncertainty,
-            # "target_eval_p1": target_eval_p1,
-            # "target_eval_p2": target_eval_p2,
             "lr": lr_now,
             "epoch": epoch,
             "step": glob_step})
-
-        # wandb.watch(model_pos, log="all", log_freq=100)
 
         # Update log file
         logger.append([epoch + 1, lr_now, epoch_loss, error_eval_p1, error_eval_p2])
@@ -264,15 +258,10 @@ def train(data_loader, model_pos, model_uncertainty, criterion, optimizer, devic
         targets_3d, inputs_2d = targets_3d.to(device), inputs_2d.to(device)
         outputs_3d, unc_inputs = model_pos(inputs_2d)
 
-        # print(unc_inputs.reshape(num_poses, -1).shape)
-
         uncertainty_values = model_uncertainty(unc_inputs.reshape(num_poses, -1))
         
         optimizer.zero_grad()
         loss_3d_pos = criterion(outputs_3d, targets_3d)
-
-        # proc_out = torch.clone(outputs_3d)
-        # proc_out[:, :, :] -= proc_out[:, :1, :]
 
         unc_error = criterion_unc(uncertainty_values, outputs_3d, targets_3d)
 
@@ -295,7 +284,6 @@ def train(data_loader, model_pos, model_uncertainty, criterion, optimizer, devic
             .format(batch=i + 1, size=len(data_loader), data=data_time.avg, bt=batch_time.avg,
                     ttl=bar.elapsed_td, eta=bar.eta_td, loss=epoch_loss_3d_pos.avg, uncloss = epoch_loss_uncertainty.avg)
         bar.next()
-        # print(uncertainty_values[0])
 
     bar.finish()
     return epoch_loss_3d_pos.avg, epoch_loss_uncertainty.avg, lr_now, step

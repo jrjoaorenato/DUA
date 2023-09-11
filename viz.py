@@ -20,7 +20,6 @@ from common.visualization import render_animation
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-#TODO: add surreal visualization capability
 def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch training script')
 

@@ -77,8 +77,7 @@ def main(args):
 
     if args.dataset == 'surreal':
         from common.surreal_dataset import SURREALDataset
-        # surreal_test_path = path.join('data', 'surreal_proc_3d_test.npy')
-        surreal_test_path = path.join('data', 'surreal_complete_parsed_test.npy')
+        surreal_test_path = path.join('data', 'surreal_proc_3d_test.npy')
         dataset = SURREALDataset(surreal_test_path)
 
     stride = args.downsample
@@ -94,16 +93,12 @@ def main(args):
     model_pos.apply(init_weights)
     model_uncertainty.apply(init_weights)
     print("==> Total parameters: {:.2f}M".format(sum(p.numel() for p in model_pos.parameters()) / 1000000.0))
-
-    # criterion = nn.MSELoss(reduction='mean').to(device)
     criterion = nn.L1Loss(reduction='mean').to(device)
     optimizer = torch.optim.Adam(model_pos.parameters(), lr=args.lr)
 
     # Optionally resume from a checkpoint
     ckpt_path_conv = 'checkpoint/conversion_smpl_to_h36m/2023-01-17T17:14:52.076925/ckpt_best.pth.tar'
-    # ckpt_path = 'checkpoint/gt_uncertainty_lin/ckpt_best.pth.tar'
-    ckpt_path = 'checkpoint/surreal_noda/2023-06-13T15:10:41.649064/ckpt_best.pth.tar'#'checkpoint/surreal_noda/current_results/ckpt_best.pth.tar'
-    # ckpt_path= 'checkpoint/surreal_noda/current_results/ckpt_best.pth.tar'
+    ckpt_path = 'checkpoint/surreal_noda/2023-06-13T15:10:41.649064/ckpt_best.pth.tar'
 
 
     if path.isfile(ckpt_path):
@@ -153,7 +148,6 @@ def evaluate(data_loader, model_pos, model_conversion, device):
         targets_3d = targets_3d.to(device)
         outputs_3d, _ = model_pos(inputs_2d.view(num_poses, -1))
         outputs_3d = outputs_3d.view(num_poses, -1, 3).cpu()
-        # outputs_3d = model_conversion(outputs_3d).view(num_poses, -1, 3).cpu()
         targets_3d_conv = model_conversion(targets_3d[:,1:,:].view(num_poses, -1)).view(num_poses, -1, 3).cpu()
         targets_3d_conv = torch.cat([torch.zeros(num_poses, 1, targets_3d_conv.size(2)), targets_3d_conv], 1)  # Pad hip joint (0,0,0)
         outputs_3d = torch.cat([torch.zeros(num_poses, 1, outputs_3d.size(2)), outputs_3d], 1)  # Pad hip joint (0,0,0)

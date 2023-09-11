@@ -68,21 +68,7 @@ def parse_args():
 
 
 def main(args):
-    # wandb.init(project="poseDA", entity="jrjoaorenato")
     print('==> Using settings {}'.format(args))
-
-    # wandb.config = {
-    #     "learning_rate": args.lr,
-    #     "epochs": args.epochs,
-    #     "batch_size": args.batch_size,
-    #     "lr_decay": args.lr_decay,
-    #     "lr_gamma": args.lr_gamma,
-    #     "max_norm": args.max_norm,
-    #     "dataset_source": args.dataset_source,
-    #     "dataset_target": args.dataset_target,
-    #     "keypoints": args.keypoints
-    # }
-
 
     print('==> Loading dataset...')
     dataset_path = path.join('data', 'data_3d_' + args.dataset_source + '.npz')
@@ -92,15 +78,6 @@ def main(args):
         dataset = Human36mDataset(dataset_path)
         subjects_train = TRAIN_SUBJECTS
         subjects_test = TEST_SUBJECTS
-
-    # if args.dataset_target == 'surreal':
-    #     from common.surreal_dataset import SURREALDataset
-    #     scenario = 'train'
-    #     surreal_path = path.join('data', 'surreal_proc_3d_' + scenario + '.npy')
-    #     surreal_dataset = SURREALDataset(surreal_path)
-
-    #     surreal_test_path = path.join('data', 'surreal_proc_3d_val.npy')
-    #     surreal_test_dataset = SURREALDataset(surreal_test_path)
 
     print('==> Preparing data...')
     dataset = read_3d_data(dataset)
@@ -126,7 +103,6 @@ def main(args):
     model_uncertainty.apply(init_weights)
     print("==> Total parameters: {:.2f}M".format(sum(p.numel() for p in model_pos.parameters()) / 1000000.0))
 
-    # criterion = nn.MSELoss(reduction='mean').to(device)
     criterion = nn.L1Loss(reduction='mean').to(device)
     optimizer = torch.optim.Adam( 
             [
@@ -196,16 +172,6 @@ def main(args):
     valid_loader = DataLoader(PoseGenerator(poses_valid, poses_valid_2d, actions_valid), batch_size=args.batch_size,
                               shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
 
-    # poses_target, poses_target_2d = fetch_surreal(surreal_dataset, stride)
-    # target_loader = DataLoader(PoseGeneratorTarget(poses_target, poses_target_2d), batch_size=args.batch_size,
-    #                            shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-
-    # target_eval, target_eval_2d = fetch_surreal(surreal_test_dataset, stride)
-    # target_eval_loader = DataLoader(PoseGeneratorTarget(target_eval, target_eval_2d), batch_size=args.batch_size,
-    #                            shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-
-    # target_loader = ForeverDataIterator(target_loader)
-
     for epoch in range(start_epoch, args.epochs):
         print('\nEpoch: %d | LR: %.8f' % (epoch + 1, lr_now))
 
@@ -215,18 +181,6 @@ def main(args):
 
         # Evaluate
         error_eval_p1, error_eval_p2 = evaluate(valid_loader, model_pos, device)
-
-        # wandb.log({"epoch_loss": epoch_loss,
-        #     "error_eval_p1": error_eval_p1,
-        #     "error_eval_p2": error_eval_p2,
-        #     "loss_uncertainty": epoch_loss_uncertainty,
-        #     # "target_eval_p1": target_eval_p1,
-        #     # "target_eval_p2": target_eval_p2,
-        #     "lr": lr_now,
-        #     "epoch": epoch,
-        #     "step": glob_step})
-
-        # wandb.watch(model_pos, log="all", log_freq=100)
 
         # Update log file
         logger.append([epoch + 1, lr_now, epoch_loss, error_eval_p1, error_eval_p2])
@@ -279,13 +233,10 @@ def train(data_loader, model_pos, model_uncertainty, criterion, optimizer, devic
         optimizer.zero_grad()    
         loss_3d_pos = criterion(outputs_3d, targets_3d)
         unc_error = criterion_unc(uncertainty_values, outputs_3d, targets_3d)
-        # unc_error = criterion_unc(uncertainty_values, targets_3d)
 
         total_loss = loss_3d_pos + 0.1*unc_error
 
         total_loss.backward()
-        # loss_3d_pos.backward() #todo investigate if it's better to sum the errors or do this
-        # unc_error.backward()
         if max_norm:
             nn.utils.clip_grad_norm_(model_pos.parameters(), max_norm=1)
         optimizer.step()
@@ -311,17 +262,12 @@ def evaluate(data_loader, model_pos, device):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     epoch_loss_3d_pos = AverageMeter()
-    # epoch_loss_3d_tgt = AverageMeter()
     epoch_loss_3d_pos_procrustes = AverageMeter()
-    # epoch_loss_3d_procrustes_tgt = AverageMeter()
 
     # Switch to evaluate mode
     torch.set_grad_enabled(False)
     model_pos.eval()
     end = time.time()
-
-    # encoder_source = 'source'
-    # encoder_target = 'source'
 
     bar = Bar('Eval Src', max=len(data_loader))
     for i, (targets_3d, inputs_2d, _) in enumerate(data_loader):
@@ -348,35 +294,7 @@ def evaluate(data_loader, model_pos, device):
                     ttl=bar.elapsed_td, eta=bar.eta_td, e1=epoch_loss_3d_pos.avg, e2=epoch_loss_3d_pos_procrustes.avg)
         bar.next()
 
-    # print(outputs_3d[0])
-    # print(targets_3d[0])
-
     bar.finish()
-
-    # bar = Bar('Eval Tgt', max=len(data_loader_target))
-    # for i, (targets_3d, inputs_2d) in enumerate(data_loader_target):
-    #     # Measure data loading time
-    #     data_time.update(time.time() - end)
-    #     num_poses = targets_3d.size(0)
-
-    #     inputs_2d = inputs_2d.to(device)
-    #     outputs_3d = model_pos(inputs_2d.view(num_poses, -1)).view(num_poses, -1, 3).cpu()
-    #     outputs_3d = torch.cat([torch.zeros(num_poses, 1, outputs_3d.size(2)), outputs_3d], 1)  # Pad hip joint (0,0,0)
-        
-    #     epoch_loss_3d_tgt.update(mpjpe(outputs_3d, targets_3d).item() * 1000.0, num_poses)
-    #     epoch_loss_3d_procrustes_tgt.update(p_mpjpe(outputs_3d.numpy(), targets_3d.numpy()).item() * 1000.0, num_poses)
-
-    #     # Measure elapsed time
-    #     batch_time.update(time.time() - end)
-    #     end = time.time()
-
-    #     bar.suffix = '({batch}/{size}) Data: {data:.6f}s | Batch: {bt:.3f}s | Total: {ttl:} | ETA: {eta:} ' \
-    #                  '| Tgt MPJPE: {et1: .4f}, Tgt P-MPJPE: {et2: .4f}' \
-    #         .format(batch=i + 1, size=len(data_loader), data=data_time.avg, bt=batch_time.avg,
-    #                 ttl=bar.elapsed_td, eta=bar.eta_td, et1 = epoch_loss_3d_tgt.avg, et2 = epoch_loss_3d_procrustes_tgt.avg)
-    #     bar.next()
-
-    # bar.finish()
     return epoch_loss_3d_pos.avg, epoch_loss_3d_pos_procrustes.avg
 
 
