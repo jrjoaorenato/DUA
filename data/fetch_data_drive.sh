@@ -1,0 +1,5 @@
+gdown 1-MpivSk8W99Q3SKY4C7dt9n2ymTg270Q
+gdown 1-4Q3jwE_9cdGQiGJ7nQ_W_MXEiH8KfCe
+gdown 1-HFMyT0jZkd4NIrcbtxisCXWeO70GRwW
+gdown 1nA0MMMk8cJ5Y1347rc9_ERuPh2BSqGTQ
+unzip data_daGCN.zip
