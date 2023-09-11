@@ -88,7 +88,7 @@ python viz.py --evaluate [checkpoint_location] --viz_subject S11 --viz_action Si
 The script can also export MP4 videos, and supports a variety of parameters (e.g. downsampling/FPS, size, bitrate). See [`viz.py`](viz.py) for more details.
 
 ## Examples
-<p align="center"><img src="surreal_training_da.gif" width="70%" alt="" /></p>
+<p align="center"><img src="surreal_training_noda.gif" width="70%" alt="" /></p>
 <p align="center"> Cross-domain evaluation without our method </p>
 <p align="center"><img src="surreal_training_da.gif" width="70%" alt="" /></p>
 <p align="center"> Cross-domain evaluation with DUA </p>
