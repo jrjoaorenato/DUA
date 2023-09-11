@@ -27,6 +27,8 @@ We propose a novel method called Domain Unified approach, aimed at solving pose 
 
 Parsed 3D human pose information from the SURREAL dataset was obtained from [Pose2Mesh](https://github.com/hongsukchoi/Pose2Mesh_RELEASE) and Human3.6M SMPL information was obtaining by performing the MoSH technique.
 
+Some details regarding parameter loading on each method's is still being worked on, so please be patient.
+
 
 ## Quick start
 
