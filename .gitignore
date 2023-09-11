@@ -30,3 +30,4 @@ h36m_ft/
 Would skip repository src/progress
 
 !img/*.png
+!graphical_abstract.png
